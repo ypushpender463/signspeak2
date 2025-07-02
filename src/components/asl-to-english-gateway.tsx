@@ -29,7 +29,7 @@ export function AslToEnglishGateway() {
       toast({
         variant: 'destructive',
         title: 'Translation Error',
-        description: 'Failed to translate ASL video. The model may require a valid video input.',
+        description: 'Failed to translate ASL video. Please try again with a valid video.',
       });
     } finally {
       setIsLoading(false);

@@ -20,7 +20,7 @@ export default function Home() {
             Real-Time English & ASL Translation
           </h1>
           <p className="mt-4 text-lg text-muted-foreground max-w-3xl mx-auto">
-            Bridge the communication gap with AI-powered, live video-to-video translation. Choose your translation direction to begin.
+            Bridge the communication gap with live video-to-video translation. Choose your translation direction to begin.
           </p>
         </div>
         <div className="grid gap-8 md:grid-cols-2 w-full max-w-4xl">
@@ -63,7 +63,7 @@ export default function Home() {
       <footer className="py-6 md:px-8 md:py-0 border-t">
         <div className="container flex flex-col items-center justify-center gap-4 md:h-24 md:flex-row">
           <p className="text-center text-sm leading-loose text-muted-foreground md:text-left">
-            Built by an AI assistant. Powered by Next.js and Google GenAI.
+            Powered by Next.js.
           </p>
         </div>
       </footer>

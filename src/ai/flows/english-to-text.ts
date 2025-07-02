@@ -1,7 +1,7 @@
 'use server';
 
 /**
- * @fileOverview This file defines a Genkit flow for transcribing English speech to text.
+ * @fileOverview This file defines a flow for transcribing English speech to text.
  *
  * - englishToText - A function that handles the speech-to-text transcription process.
  * - EnglishToTextInput - The input type for the englishToText function.
