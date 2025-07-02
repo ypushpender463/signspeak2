@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { englishToText } from '@/ai/flows/english-to-text';
@@ -8,61 +8,29 @@ import { textToAsl } from '@/ai/flows/text-to-asl';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { VideoFeed } from '@/components/video-feed';
-import { Loader2, Mic, Languages, ArrowLeft } from 'lucide-react';
+import { Loader2, Mic, Languages, ArrowLeft, Play, Square } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Icons } from '@/components/icons';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+
+const TRANSLATION_INTERVAL = 5000; // 5 seconds
 
 export default function EnglishToAslPage() {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
   const [transcribedText, setTranscribedText] = useState<string | null>(null);
   const [aslAnimation, setAslAnimation] = useState<string | null>(null);
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const [isRecording, setIsRecording] = useState(false);
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-
+  const translationIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
   const { toast } = useToast();
   
-  const handleStartRecording = () => {
-    if (videoRef.current && videoRef.current.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      mediaRecorderRef.current = new MediaRecorder(stream);
-      const chunks: Blob[] = [];
-      mediaRecorderRef.current.ondataavailable = (event) => {
-          chunks.push(event.data);
-      };
-      mediaRecorderRef.current.onstop = () => {
-          const blob = new Blob(chunks, { type: 'audio/webm' });
-          setAudioBlob(blob);
-      };
-      mediaRecorderRef.current.start();
-      setIsRecording(true);
-      setAudioBlob(null);
-      setTranscribedText(null);
-      setAslAnimation(null);
-    } else {
-        toast({
-            variant: 'destructive',
-            title: 'Camera/Microphone Error',
-            description: 'Could not access media stream. Please check permissions.',
-        });
-    }
-  };
-
-  const handleStopRecording = () => {
-    if (mediaRecorderRef.current) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-    }
-  };
-
-  const handleTranslate = async () => {
+  const processAudioChunk = useCallback(async (audioBlob: Blob) => {
     if (!audioBlob) return;
     
-    setIsLoading(true);
-    setTranscribedText(null);
-    setAslAnimation(null);
+    setIsProcessing(true);
+    setAslAnimation(null); // Clear old animation
     
     try {
       const reader = new FileReader();
@@ -71,12 +39,14 @@ export default function EnglishToAslPage() {
         const base64data = reader.result as string;
         try {
           const textResult = await englishToText({ audioDataUri: base64data });
-          setTranscribedText(textResult.transcription);
-          
-          if (textResult.transcription) {
-            const aslResult = await textToAsl({ englishText: textResult.transcription });
+          const newText = textResult.transcription;
+
+          if (newText && newText.trim()) {
+            setTranscribedText(current => current ? `${current} ${newText}` : newText);
+            const aslResult = await textToAsl({ englishText: newText });
             setAslAnimation(aslResult.aslAnimationData);
           }
+          
         } catch (err) {
             console.error(err);
             toast({
@@ -85,7 +55,7 @@ export default function EnglishToAslPage() {
               description: 'Failed to translate speech. Please try again.',
             });
         } finally {
-          setIsLoading(false);
+          setIsProcessing(false);
         }
       };
     } catch (err) {
@@ -95,9 +65,95 @@ export default function EnglishToAslPage() {
         title: 'Processing Error',
         description: 'Failed to process audio. Please try recording again.',
       });
-      setIsLoading(false);
+      setIsProcessing(false);
     }
+  }, [toast]);
+
+  const startChunkRecording = useCallback(() => {
+    if (videoRef.current && videoRef.current.srcObject) {
+      // Ensure we have a stream with audio
+      const stream = videoRef.current.srcObject as MediaStream;
+      if (stream.getAudioTracks().length === 0) {
+        toast({
+          variant: 'destructive',
+          title: 'No Audio Track',
+          description: 'Microphone not detected. Please check permissions and hardware.'
+        });
+        setIsTranslating(false);
+        return;
+      }
+
+      mediaRecorderRef.current = new MediaRecorder(stream);
+      const chunks: Blob[] = [];
+
+      mediaRecorderRef.current.ondataavailable = (event) => {
+          chunks.push(event.data);
+      };
+
+      mediaRecorderRef.current.onstop = () => {
+          const blob = new Blob(chunks, { type: 'audio/webm' });
+          if(blob.size > 0) {
+            processAudioChunk(blob);
+          }
+      };
+
+      mediaRecorderRef.current.start();
+      
+      setTimeout(() => {
+        if(mediaRecorderRef.current?.state === 'recording') {
+            mediaRecorderRef.current.stop();
+        }
+      }, TRANSLATION_INTERVAL);
+
+    } else {
+        toast({
+            variant: 'destructive',
+            title: 'Camera/Microphone Error',
+            description: 'Could not access media stream. Please check permissions.',
+        });
+        setIsTranslating(false);
+    }
+  }, [processAudioChunk, toast]);
+
+  const handleStartTranslating = () => {
+    setIsTranslating(true);
+    setTranscribedText('');
+    setAslAnimation(null);
   };
+  
+  const handleStopTranslating = () => {
+    setIsTranslating(false);
+    if (translationIntervalRef.current) {
+      clearInterval(translationIntervalRef.current);
+      translationIntervalRef.current = null;
+    }
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+        mediaRecorderRef.current.stop();
+    }
+    mediaRecorderRef.current = null;
+    setIsProcessing(false);
+  };
+  
+  useEffect(() => {
+    if (isTranslating) {
+      startChunkRecording();
+      translationIntervalRef.current = setInterval(startChunkRecording, TRANSLATION_INTERVAL);
+    } else {
+      if (translationIntervalRef.current) {
+        clearInterval(translationIntervalRef.current);
+        translationIntervalRef.current = null;
+      }
+    }
+    
+    return () => {
+      if (translationIntervalRef.current) {
+        clearInterval(translationIntervalRef.current);
+      }
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+        mediaRecorderRef.current.stop();
+      }
+    };
+  }, [isTranslating, startChunkRecording]);
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
@@ -123,40 +179,26 @@ export default function EnglishToAslPage() {
                   English Input
                 </CardTitle>
                 <CardDescription>
-                  Record yourself speaking English. We'll capture your audio for translation.
+                  Start speaking and we'll translate in real-time. Your camera is on for presence.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <VideoFeed videoRef={videoRef} />
                 <div className="flex gap-4">
-                  <Button onClick={handleStartRecording} className="w-full" disabled={isRecording}>
-                    {isRecording && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Start Recording
-                  </Button>
-                  <Button onClick={handleStopRecording} className="w-full" disabled={!isRecording} variant="destructive">
-                    Stop Recording
-                  </Button>
+                  {!isTranslating ? (
+                      <Button onClick={handleStartTranslating} className="w-full" disabled={isTranslating}>
+                        <Play className="mr-2 h-4 w-4" />
+                        Start Translating
+                      </Button>
+                    ) : (
+                      <Button onClick={handleStopTranslating} className="w-full" variant="destructive" disabled={!isTranslating}>
+                        <Square className="mr-2 h-4 w-4" />
+                        Stop Translating
+                      </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
-            {audioBlob && (
-                <div className="space-y-4">
-                    <Alert>
-                        <AlertTitle>Recording Complete!</AlertTitle>
-                        <AlertDescription>
-                            Your audio is ready. Press "Translate" to process it.
-                        </AlertDescription>
-                    </Alert>
-                    <Button onClick={handleTranslate} className="w-full" disabled={isLoading}>
-                      {isLoading ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <Languages className="mr-2 h-4 w-4" />
-                      )}
-                      Translate
-                    </Button>
-                </div>
-            )}
           </div>
           <Card className="flex flex-col shadow-lg">
             <CardHeader>
@@ -170,7 +212,7 @@ export default function EnglishToAslPage() {
             </CardHeader>
             <CardContent className="flex-grow flex flex-col gap-4">
               <div className="w-full aspect-video rounded-lg border border-dashed flex items-center justify-center bg-muted/40 p-4">
-                {isLoading && !aslAnimation ? (
+                {isProcessing && !aslAnimation ? (
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
                         <Loader2 className="h-8 w-8 animate-spin" />
                         <p>Generating Animation...</p>
@@ -181,24 +223,17 @@ export default function EnglishToAslPage() {
                   </div>
                 ) : (
                   <div className="text-muted-foreground text-center px-4">
-                    <p>The generated ASL animation will be displayed here.</p>
+                    <p>The generated ASL animation will be displayed here once you start translating.</p>
                   </div>
                 )}
               </div>
-              {transcribedText && (
-                <div>
-                  <h3 className="text-sm font-semibold mb-2 text-card-foreground">Transcribed Text</h3>
-                  <p className="text-muted-foreground p-4 bg-muted/40 rounded-lg border">{transcribedText}</p>
+              <div className="flex-grow">
+                <h3 className="text-sm font-semibold mb-2 text-card-foreground">Full Transcription</h3>
+                <div className="text-muted-foreground p-4 bg-muted/40 rounded-lg border min-h-[6rem]">
+                  {transcribedText || "..."}
+                  {isTranslating && <span className="inline-block w-2 h-2 ml-1 bg-primary rounded-full animate-pulse"></span>}
                 </div>
-              )}
-               {aslAnimation && (
-                <div className="w-full">
-                  <h3 className="text-sm font-semibold mb-2 text-card-foreground">ASL Animation Data (for debugging)</h3>
-                  <pre className="mt-2 text-xs text-left bg-background rounded-md p-2 max-h-40 overflow-auto w-full border">
-                      <code>{JSON.stringify(JSON.parse(aslAnimation), null, 2)}</code>
-                  </pre>
-                </div>
-              )}
+              </div>
             </CardContent>
           </Card>
         </div>
