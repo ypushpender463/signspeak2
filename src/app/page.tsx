@@ -1,6 +1,7 @@
-import { EnglishToAslGateway } from '@/components/english-to-asl-gateway';
-import { AslToEnglishGateway } from '@/components/asl-to-english-gateway';
+import Link from 'next/link';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Icons } from '@/components/icons';
+import { Languages, Video, ArrowRight } from 'lucide-react';
 
 export default function Home() {
   return (
@@ -13,18 +14,50 @@ export default function Home() {
           </div>
         </div>
       </header>
-      <main className="flex-1 w-full container py-8 md:py-12">
+      <main className="flex-1 w-full container flex flex-col items-center justify-center py-8 md:py-12">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl font-headline">
             Real-Time English & ASL Translation
           </h1>
           <p className="mt-4 text-lg text-muted-foreground max-w-3xl mx-auto">
-            Bridge the communication gap with AI-powered translation. Convert written English to ASL animations and translate ASL videos into English text.
+            Bridge the communication gap with AI-powered, live video-to-video translation. Choose your translation direction to begin.
           </p>
         </div>
-        <div className="grid gap-8 md:grid-cols-2">
-          <EnglishToAslGateway />
-          <AslToEnglishGateway />
+        <div className="grid gap-8 md:grid-cols-2 w-full max-w-4xl">
+          <Link href="/english-to-asl">
+            <Card className="hover:border-primary/80 hover:shadow-lg transition-all duration-300 h-full flex flex-col">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Languages className="h-6 w-6 text-primary" />
+                  English to ASL
+                </CardTitle>
+                <CardDescription>
+                  Translate spoken English into a live ASL avatar animation.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow flex items-end justify-between">
+                <p className="text-sm font-medium text-primary">Start Translating</p>
+                <ArrowRight className="h-5 w-5 text-primary" />
+              </CardContent>
+            </Card>
+          </Link>
+          <Link href="/asl-to-english">
+            <Card className="hover:border-primary/80 hover:shadow-lg transition-all duration-300 h-full flex flex-col">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Video className="h-6 w-6 text-primary" />
+                  ASL to English
+                </CardTitle>
+                <CardDescription>
+                  Translate ASL video into spoken English in real-time.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow flex items-end justify-between">
+                <p className="text-sm font-medium text-primary">Start Translating</p>
+                <ArrowRight className="h-5 w-5 text-primary" />
+              </CardContent>
+            </Card>
+          </Link>
         </div>
       </main>
       <footer className="py-6 md:px-8 md:py-0 border-t">

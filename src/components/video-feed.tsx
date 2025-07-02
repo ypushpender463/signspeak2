@@ -1,16 +1,18 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState, RefObject } from 'react';
 import { Camera, CameraOff } from 'lucide-react';
 
-export function VideoFeed() {
-  const videoRef = useRef<HTMLVideoElement>(null);
+interface VideoFeedProps {
+    videoRef: RefObject<HTMLVideoElement>;
+}
+
+export function VideoFeed({ videoRef }: VideoFeedProps) {
   const [isCameraOn, setIsCameraOn] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let stream: MediaStream | null = null;
-    let animationFrameId: number;
 
     const enableCamera = async () => {
       try {
@@ -45,11 +47,8 @@ export function VideoFeed() {
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
       }
-      if(animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-      }
     };
-  }, []);
+  }, [videoRef]);
 
   return (
     <div className="w-full aspect-video rounded-lg bg-card border overflow-hidden relative flex items-center justify-center">
