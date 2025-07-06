@@ -11,8 +11,7 @@ export function SiteHeader() {
   const pathname = usePathname();
 
   const navItems = [
-    { href: '/english-to-asl', label: 'English to ASL' },
-    { href: '/asl-to-english', label: 'ASL to English' },
+    { href: '/#translate', label: 'Translate' },
     { href: '/about', label: 'About' },
   ];
 
@@ -32,7 +31,9 @@ export function SiteHeader() {
               href={item.href}
               className={cn(
                 'transition-colors hover:text-foreground/80',
-                pathname === item.href ? 'text-foreground' : 'text-foreground/60'
+                (pathname === item.href || (pathname === '/' && item.href.startsWith('/#')))
+                  ? 'text-foreground'
+                  : 'text-foreground/60'
               )}
             >
               {item.label}
