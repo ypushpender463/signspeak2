@@ -7,8 +7,10 @@ import { textToAsl } from '@/ai/flows/text-to-asl';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { VideoFeed } from '@/components/video-feed';
-import { Loader2, Mic, Languages, Play, Square } from 'lucide-react';
+import { Loader2, Mic, Languages, Play, Square, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 
 const TRANSLATION_INTERVAL = 5000; // 5 seconds
 
@@ -17,6 +19,8 @@ export default function EnglishToAslPage() {
   const [isTranslating, setIsTranslating] = useState(false);
   const [transcribedText, setTranscribedText] = useState<string | null>(null);
   const [aslAnimation, setAslAnimation] = useState<string | null>(null);
+  const [verbalLanguage, setVerbalLanguage] = useState('english');
+  const [signLanguage, setSignLanguage] = useState('asl');
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -161,11 +165,39 @@ export default function EnglishToAslPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Mic className="h-6 w-6 text-primary" />
-                English Input
+                Language Selection
               </CardTitle>
               <CardDescription>
-                Start speaking and we'll translate in real-time. Your camera is on for presence.
+                Choose your input and output languages. Your camera is on for presence.
               </CardDescription>
+              <div className="flex items-center gap-4 pt-4">
+                <div className="w-full space-y-2">
+                    <Label htmlFor="verbal-language">From (Verbal)</Label>
+                    <Select value={verbalLanguage} onValueChange={setVerbalLanguage}>
+                        <SelectTrigger id="verbal-language">
+                            <SelectValue placeholder="Select verbal language" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="english">English</SelectItem>
+                            <SelectItem value="spanish" disabled>Spanish (coming soon)</SelectItem>
+                            <SelectItem value="french" disabled>French (coming soon)</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                <ArrowRight className="h-6 w-6 text-muted-foreground mt-8 shrink-0" />
+                <div className="w-full space-y-2">
+                    <Label htmlFor="sign-language">To (Sign)</Label>
+                    <Select value={signLanguage} onValueChange={setSignLanguage}>
+                        <SelectTrigger id="sign-language">
+                            <SelectValue placeholder="Select sign language" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="asl">ASL</SelectItem>
+                            <SelectItem value="bsl" disabled>BSL (coming soon)</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <VideoFeed videoRef={videoRef} />
@@ -189,7 +221,7 @@ export default function EnglishToAslPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Languages className="h-6 w-6 text-primary" />
-              ASL Output
+              Sign Language Output
             </CardTitle>
             <CardDescription>
               The generated ASL animation and transcribed text will appear here.

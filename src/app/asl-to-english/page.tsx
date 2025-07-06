@@ -6,8 +6,10 @@ import { textToSpeech } from '@/ai/flows/text-to-speech';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { VideoFeed } from '@/components/video-feed';
-import { Loader2, Video, Volume2, Square, Play } from 'lucide-react';
+import { Loader2, Video, Volume2, Square, Play, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 
 const TRANSLATION_INTERVAL = 5000; // 5 seconds
 
@@ -16,6 +18,8 @@ export default function AslToEnglishPage() {
   const [isTranslating, setIsTranslating] = useState(false);
   const [translatedText, setTranslatedText] = useState<string | null>(null);
   const [audioSrc, setAudioSrc] = useState<string | null>(null);
+  const [signLanguage, setSignLanguage] = useState('asl');
+  const [verbalLanguage, setVerbalLanguage] = useState('english');
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -147,11 +151,39 @@ export default function AslToEnglishPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Video className="h-6 w-6 text-primary" />
-                ASL Input
+                Language Selection
               </CardTitle>
               <CardDescription>
-                Your camera feed is live. Press "Start Translating" for real-time translation.
+                Choose your input and output languages. The camera feed is live below.
               </CardDescription>
+              <div className="flex items-center gap-4 pt-4">
+                <div className="w-full space-y-2">
+                    <Label htmlFor="sign-language">From (Sign)</Label>
+                    <Select value={signLanguage} onValueChange={setSignLanguage}>
+                        <SelectTrigger id="sign-language">
+                            <SelectValue placeholder="Select sign language" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="asl">ASL</SelectItem>
+                            <SelectItem value="bsl" disabled>BSL (coming soon)</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                <ArrowRight className="h-6 w-6 text-muted-foreground mt-8 shrink-0" />
+                <div className="w-full space-y-2">
+                    <Label htmlFor="verbal-language">To (Verbal)</Label>
+                    <Select value={verbalLanguage} onValueChange={setVerbalLanguage}>
+                        <SelectTrigger id="verbal-language">
+                            <SelectValue placeholder="Select verbal language" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="english">English</SelectItem>
+                            <SelectItem value="spanish" disabled>Spanish (coming soon)</SelectItem>
+                            <SelectItem value="french" disabled>French (coming soon)</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <VideoFeed videoRef={videoRef} />
@@ -176,10 +208,10 @@ export default function AslToEnglishPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Volume2 className="h-6 w-6 text-primary" />
-              English Output
+              Verbal Output
             </CardTitle>
             <CardDescription>
-              The translated English text and audio will appear here in real-time.
+              The translated text and audio will appear here in real-time.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex-grow">
