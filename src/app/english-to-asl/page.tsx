@@ -1,16 +1,14 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
 import { englishToText } from '@/ai/flows/english-to-text';
 import { textToAsl } from '@/ai/flows/text-to-asl';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { VideoFeed } from '@/components/video-feed';
-import { Loader2, Mic, Languages, ArrowLeft, Play, Square } from 'lucide-react';
+import { Loader2, Mic, Languages, Play, Square } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Icons } from '@/components/icons';
 
 const TRANSLATION_INTERVAL = 5000; // 5 seconds
 
@@ -156,88 +154,74 @@ export default function EnglishToAslPage() {
   }, [isTranslating, startChunkRecording]);
 
   return (
-    <div className="flex flex-col min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-14 items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 font-bold hover:text-primary transition-colors">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Home
-          </Link>
-          <div className="flex items-center">
-            <Icons.logo className="h-6 w-6 mr-2 text-primary" />
-            <span className="font-bold font-headline">SignSpeak</span>
-          </div>
-        </div>
-      </header>
-      <main className="flex-1 w-full container py-8 md:py-12">
-        <div className="grid gap-12 md:grid-cols-2">
-          <div className="flex flex-col gap-4">
-            <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Mic className="h-6 w-6 text-primary" />
-                  English Input
-                </CardTitle>
-                <CardDescription>
-                  Start speaking and we'll translate in real-time. Your camera is on for presence.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <VideoFeed videoRef={videoRef} />
-                <div className="flex gap-4">
-                  {!isTranslating ? (
-                      <Button onClick={handleStartTranslating} className="w-full" disabled={isTranslating}>
-                        <Play className="mr-2 h-4 w-4" />
-                        Start Translating
-                      </Button>
-                    ) : (
-                      <Button onClick={handleStopTranslating} className="w-full" variant="destructive" disabled={!isTranslating}>
-                        <Square className="mr-2 h-4 w-4" />
-                        Stop Translating
-                      </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          <Card className="flex flex-col shadow-lg">
+    <div className="container py-8 md:py-12">
+      <div className="grid gap-12 md:grid-cols-2">
+        <div className="flex flex-col gap-4">
+          <Card className="shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Languages className="h-6 w-6 text-primary" />
-                ASL Output
+                <Mic className="h-6 w-6 text-primary" />
+                English Input
               </CardTitle>
               <CardDescription>
-                The generated ASL animation and transcribed text will appear here.
+                Start speaking and we'll translate in real-time. Your camera is on for presence.
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex-grow flex flex-col gap-4">
-              <div className="w-full aspect-video rounded-lg border border-dashed flex items-center justify-center bg-muted/40 p-4">
-                {isProcessing && !aslAnimation ? (
-                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                        <Loader2 className="h-8 w-8 animate-spin" />
-                        <p>Generating Animation...</p>
-                    </div>
-                ) : aslAnimation ? (
-                  <div className="text-center w-full flex items-center justify-center">
-                    <Image src="https://placehold.co/400x300.png" alt="ASL Animation Placeholder" width={400} height={300} className="rounded-md" data-ai-hint="avatar animation" />
-                  </div>
-                ) : (
-                  <div className="text-muted-foreground text-center px-4">
-                    <p>The generated ASL animation will be displayed here once you start translating.</p>
-                  </div>
+            <CardContent className="space-y-4">
+              <VideoFeed videoRef={videoRef} />
+              <div className="flex gap-4">
+                {!isTranslating ? (
+                    <Button onClick={handleStartTranslating} className="w-full" disabled={isTranslating}>
+                      <Play className="mr-2 h-4 w-4" />
+                      Start Translating
+                    </Button>
+                  ) : (
+                    <Button onClick={handleStopTranslating} className="w-full" variant="destructive" disabled={!isTranslating}>
+                      <Square className="mr-2 h-4 w-4" />
+                      Stop Translating
+                    </Button>
                 )}
-              </div>
-              <div className="flex-grow">
-                <h3 className="text-sm font-semibold mb-2 text-card-foreground">Full Transcription</h3>
-                <div className="text-muted-foreground p-4 bg-muted/40 rounded-lg border min-h-[6rem]">
-                  {transcribedText || "..."}
-                  {isTranslating && <span className="inline-block w-2 h-2 ml-1 bg-primary rounded-full animate-pulse"></span>}
-                </div>
               </div>
             </CardContent>
           </Card>
         </div>
-      </main>
+        <Card className="flex flex-col shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Languages className="h-6 w-6 text-primary" />
+              ASL Output
+            </CardTitle>
+            <CardDescription>
+              The generated ASL animation and transcribed text will appear here.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex-grow flex flex-col gap-4">
+            <div className="w-full aspect-video rounded-lg border border-dashed flex items-center justify-center bg-muted/40 p-4">
+              {isProcessing && !aslAnimation ? (
+                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                      <Loader2 className="h-8 w-8 animate-spin" />
+                      <p>Generating Animation...</p>
+                  </div>
+              ) : aslAnimation ? (
+                <div className="text-center w-full flex items-center justify-center">
+                  <Image src="https://placehold.co/400x300.png" alt="ASL Animation Placeholder" width={400} height={300} className="rounded-md" data-ai-hint="avatar animation" />
+                </div>
+              ) : (
+                <div className="text-muted-foreground text-center px-4">
+                  <p>The generated ASL animation will be displayed here once you start translating.</p>
+                </div>
+              )}
+            </div>
+            <div className="flex-grow">
+              <h3 className="text-sm font-semibold mb-2 text-card-foreground">Full Transcription</h3>
+              <div className="text-muted-foreground p-4 bg-muted/40 rounded-lg border min-h-[6rem]">
+                {transcribedText || "..."}
+                {isTranslating && <span className="inline-block w-2 h-2 ml-1 bg-primary rounded-full animate-pulse"></span>}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

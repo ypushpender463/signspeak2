@@ -1,15 +1,13 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import Link from 'next/link';
 import { aslToText } from '@/ai/flows/asl-to-text';
 import { textToSpeech } from '@/ai/flows/text-to-speech';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { VideoFeed } from '@/components/video-feed';
-import { Loader2, Video, Volume2, ArrowLeft, Square, Play } from 'lucide-react';
+import { Loader2, Video, Volume2, Square, Play } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Icons } from '@/components/icons';
 
 const TRANSLATION_INTERVAL = 5000; // 5 seconds
 
@@ -142,86 +140,72 @@ export default function AslToEnglishPage() {
   }, [audioSrc]);
 
   return (
-    <div className="flex flex-col min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-14 items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 font-bold hover:text-primary transition-colors">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Home
-          </Link>
-          <div className="flex items-center">
-            <Icons.logo className="h-6 w-6 mr-2 text-primary" />
-            <span className="font-bold font-headline">SignSpeak</span>
-          </div>
-        </div>
-      </header>
-      <main className="flex-1 w-full container py-8 md:py-12">
-        <div className="grid gap-12 md:grid-cols-2">
-          <div className="flex flex-col gap-4">
-            <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Video className="h-6 w-6 text-primary" />
-                  ASL Input
-                </CardTitle>
-                <CardDescription>
-                  Your camera feed is live. Press "Start Translating" for real-time translation.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <VideoFeed videoRef={videoRef} />
-                <div className="flex gap-4">
-                  {!isTranslating ? (
-                    <Button onClick={handleStartTranslating} className="w-full" disabled={isTranslating}>
-                      <Play className="mr-2 h-4 w-4" />
-                      Start Translating
-                    </Button>
-                  ) : (
-                    <Button onClick={handleStopTranslating} className="w-full" variant="destructive" disabled={!isTranslating}>
-                       <Square className="mr-2 h-4 w-4" />
-                      Stop Translating
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card className="flex flex-col shadow-lg">
+    <div className="container py-8 md:py-12">
+      <div className="grid gap-12 md:grid-cols-2">
+        <div className="flex flex-col gap-4">
+          <Card className="shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Volume2 className="h-6 w-6 text-primary" />
-                English Output
+                <Video className="h-6 w-6 text-primary" />
+                ASL Input
               </CardTitle>
               <CardDescription>
-                The translated English text and audio will appear here in real-time.
+                Your camera feed is live. Press "Start Translating" for real-time translation.
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex-grow">
-              <div className="w-full min-h-[16rem] rounded-lg border border-dashed p-4 flex flex-col justify-center items-center bg-muted/40 text-center">
-                {isProcessing && !translatedText ? (
-                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                    <Loader2 className="h-8 w-8 animate-spin" />
-                    <p>Translating...</p>
-                  </div>
-                ) : translatedText ? (
-                    <div className="space-y-4 text-left w-full">
-                        <p className="text-lg text-card-foreground">{translatedText}</p>
-                        {audioSrc && (
-                            <audio ref={audioRef} src={audioSrc} controls className="w-full mt-4" />
-                        )}
-                        {isProcessing && <p className="text-sm text-muted-foreground mt-2 flex items-center"><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Receiving new translation...</p>}
-                    </div>
+            <CardContent className="space-y-4">
+              <VideoFeed videoRef={videoRef} />
+              <div className="flex gap-4">
+                {!isTranslating ? (
+                  <Button onClick={handleStartTranslating} className="w-full" disabled={isTranslating}>
+                    <Play className="mr-2 h-4 w-4" />
+                    Start Translating
+                  </Button>
                 ) : (
-                  <p className="text-muted-foreground">
-                    Translation will appear here.
-                  </p>
+                  <Button onClick={handleStopTranslating} className="w-full" variant="destructive" disabled={!isTranslating}>
+                      <Square className="mr-2 h-4 w-4" />
+                    Stop Translating
+                  </Button>
                 )}
               </div>
             </CardContent>
           </Card>
         </div>
-      </main>
+
+        <Card className="flex flex-col shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Volume2 className="h-6 w-6 text-primary" />
+              English Output
+            </CardTitle>
+            <CardDescription>
+              The translated English text and audio will appear here in real-time.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex-grow">
+            <div className="w-full min-h-[16rem] rounded-lg border border-dashed p-4 flex flex-col justify-center items-center bg-muted/40 text-center">
+              {isProcessing && !translatedText ? (
+                <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                  <Loader2 className="h-8 w-8 animate-spin" />
+                  <p>Translating...</p>
+                </div>
+              ) : translatedText ? (
+                  <div className="space-y-4 text-left w-full">
+                      <p className="text-lg text-card-foreground">{translatedText}</p>
+                      {audioSrc && (
+                          <audio ref={audioRef} src={audioSrc} controls className="w-full mt-4" />
+                      )}
+                      {isProcessing && <p className="text-sm text-muted-foreground mt-2 flex items-center"><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Receiving new translation...</p>}
+                  </div>
+              ) : (
+                <p className="text-muted-foreground">
+                  Translation will appear here.
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
