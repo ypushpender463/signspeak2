@@ -1,10 +1,42 @@
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Languages, Video, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 
 export default function Home() {
+  const router = useRouter();
+  const [fromLang, setFromLang] = useState('english-verbal');
+  const [toLang, setToLang] = useState('asl-sign');
+
+  const languageOptions = [
+    { value: 'english-verbal', label: 'English (Verbal)', type: 'verbal' },
+    { value: 'asl-sign', label: 'ASL (Sign)', type: 'sign' },
+  ];
+
+  const handleTranslate = () => {
+    const fromType = languageOptions.find((l) => l.value === fromLang)?.type;
+    const toType = languageOptions.find((l) => l.value === toLang)?.type;
+
+    if (fromType === 'verbal' && toType === 'sign') {
+      router.push('/english-to-asl');
+    } else if (fromType === 'sign' && toType === 'verbal') {
+      router.push('/asl-to-english');
+    }
+  };
+
+  const isSelectionValid = () => {
+    const fromType = languageOptions.find((l) => l.value === fromLang)?.type;
+    const toType = languageOptions.find((l) => l.value === toLang)?.type;
+    return fromType !== toType;
+  };
+
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
@@ -52,42 +84,49 @@ export default function Home() {
               </p>
             </div>
           </div>
-          <div className="mx-auto grid max-w-5xl items-start gap-8 sm:grid-cols-2 md:gap-12 lg:max-w-none lg:grid-cols-2 mt-12">
-             <Link href="/english-to-asl">
-                <Card className="hover:border-primary/80 hover:shadow-lg transition-all duration-300 h-full flex flex-col">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Languages className="h-6 w-6 text-primary" />
-                      English to ASL
-                    </CardTitle>
-                    <CardDescription>
-                      Translate spoken English into a live ASL avatar animation.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="flex-grow flex items-end justify-between">
-                    <p className="text-sm font-medium text-primary">Start Translating</p>
-                    <ArrowRight className="h-5 w-5 text-primary" />
-                  </CardContent>
-                </Card>
-              </Link>
-              <Link href="/asl-to-english">
-                <Card className="hover:border-primary/80 hover:shadow-lg transition-all duration-300 h-full flex flex-col">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Video className="h-6 w-6 text-primary" />
-                      ASL to English
-                    </CardTitle>
-                    <CardDescription>
-                      Translate ASL video into spoken English in real-time.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="flex-grow flex items-end justify-between">
-                    <p className="text-sm font-medium text-primary">Start Translating</p>
-                    <ArrowRight className="h-5 w-5 text-primary" />
-                  </CardContent>
-                </Card>
-              </Link>
-          </div>
+          <div className="mx-auto mt-12 max-w-2xl">
+            <Card className="shadow-lg">
+                <CardHeader>
+                    <CardTitle>Create a Translation</CardTitle>
+                    <CardDescription>Select your languages to begin your real-time translation.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="flex items-end gap-4">
+                        <div className="w-full space-y-2">
+                            <Label htmlFor="from-language">From</Label>
+                            <Select value={fromLang} onValueChange={setFromLang}>
+                                <SelectTrigger id="from-language">
+                                    <SelectValue placeholder="Select language" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {languageOptions.map(opt => (
+                                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <ArrowRight className="h-6 w-6 text-muted-foreground shrink-0 mb-2" />
+                         <div className="w-full space-y-2">
+                            <Label htmlFor="to-language">To</Label>
+                            <Select value={toLang} onValueChange={setToLang}>
+                                <SelectTrigger id="to-language">
+                                    <SelectValue placeholder="Select language" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                     {languageOptions.map(opt => (
+                                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                     <Button onClick={handleTranslate} disabled={!isSelectionValid()} className="w-full">
+                        Start Translating
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                </CardContent>
+            </Card>
+        </div>
         </div>
       </section>
     </div>
