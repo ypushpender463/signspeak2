@@ -5,33 +5,29 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { auth } from '@/lib/firebase';
 import { 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword,
-  updateProfile,
-  sendEmailVerification,
-  signOut,
-  reload
+  signInWithPopup,
+  GoogleAuthProvider
 } from 'firebase/auth';
 import { useAuth } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
+const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg role="img" viewBox="0 0 24 24" {...props}>
+        <path
+        fill="currentColor"
+        d="M12.48 10.92v3.28h7.84c-.24 1.84-.85 3.18-1.73 4.1-1.02 1.02-2.37 1.62-3.82 1.62-3.01 0-5.46-2.45-5.46-5.46s2.45-5.46 5.46-5.46c1.62 0 2.85.61 3.75 1.45l2.58-2.58C18.04 3.79 15.68 2.5 12.48 2.5c-4.97 0-9 4.03-9 9s4.03 9 9 9c2.85 0 5.1-1 6.84-2.75 1.84-1.84 2.37-4.48 2.37-6.55 0-.61-.06-1.21-.17-1.8z"
+        ></path>
+    </svg>
+);
+
+
 export default function LoginPage() {
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
-  const [signupName, setSignupName] = useState('');
-  const [signupEmail, setSignupEmail] = useState('');
-  const [signupPassword, setSignupPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('login');
-  const [showVerificationMessage, setShowVerificationMessage] = useState(false);
   
   const router = useRouter();
   const { toast } = useToast();
@@ -43,29 +39,15 @@ export default function LoginPage() {
     }
   }, [user, router]);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleGoogleSignIn = async () => {
     setIsLoading(true);
     setError(null);
-    setShowVerificationMessage(false);
+    const provider = new GoogleAuthProvider();
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
-
-      // Force a reload of the user's profile to get the latest emailVerified status.
-      await reload(userCredential.user);
-      
-      // After reload, auth.currentUser will have the latest state.
-      if (!auth.currentUser?.emailVerified) {
-        setError("Your email is not verified. Please check your inbox for a verification link. We've sent a new one just in case.");
-        await sendEmailVerification(userCredential.user);
-        await signOut(auth);
-        setIsLoading(false);
-        return;
-      }
-
+      await signInWithPopup(auth, provider);
       toast({
         title: 'Login Successful',
-        description: 'Welcome back!',
+        description: 'Welcome!',
       });
       router.push('/');
     } catch (err: any) {
@@ -74,41 +56,6 @@ export default function LoginPage() {
       setIsLoading(false);
     }
   };
-  
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-    setShowVerificationMessage(false);
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, signupEmail, signupPassword);
-      if (userCredential.user) {
-        await updateProfile(userCredential.user, { displayName: signupName });
-        await sendEmailVerification(userCredential.user);
-      }
-      await signOut(auth); // Sign out to force login after verification
-
-      // Reset form
-      setSignupName('');
-      setSignupEmail('');
-      setSignupPassword('');
-      
-      // Show message on login tab and switch to it
-      setShowVerificationMessage(true);
-      setActiveTab('login');
-      
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleTabChange = (value: string) => {
-    setError(null);
-    setShowVerificationMessage(false);
-    setActiveTab(value);
-  }
 
   if (loading || user) {
      return (
@@ -120,125 +67,30 @@ export default function LoginPage() {
 
   return (
     <div className="flex items-center justify-center py-12 md:py-24">
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full max-w-[400px]">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="login">Login</TabsTrigger>
-          <TabsTrigger value="signup">Sign Up</TabsTrigger>
-        </TabsList>
-        <TabsContent value="login">
-          <Card>
-            <CardHeader>
-              <CardTitle>Login</CardTitle>
-              <CardDescription>
-                Welcome back! Please enter your details to continue.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-               {showVerificationMessage && (
-                  <Alert>
-                    <AlertTitle>Check your email</AlertTitle>
-                    <AlertDescription>
-                      A verification link has been sent. Please verify your account before logging in.
-                    </AlertDescription>
-                  </Alert>
-                )}
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="login-email">Email</Label>
-                  <Input 
-                    id="login-email" 
-                    type="email" 
-                    placeholder="m@example.com" 
-                    required 
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
-                    disabled={isLoading}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="login-password">Password</Label>
-                  <Input 
-                    id="login-password" 
-                    type="password" 
-                    required 
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    disabled={isLoading}
-                  />
-                </div>
-                {error && (
-                  <Alert variant="destructive">
-                    <AlertTitle>Error</AlertTitle>
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Login
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="signup">
-          <Card>
-            <CardHeader>
-              <CardTitle>Sign Up</CardTitle>
-              <CardDescription>
-                Create an account to get started with SignSpeak.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <form onSubmit={handleSignUp} className="space-y-4">
-                 <div className="space-y-2">
-                  <Label htmlFor="signup-name">Name</Label>
-                  <Input 
-                    id="signup-name" 
-                    placeholder="Your Name" 
-                    required 
-                    value={signupName}
-                    onChange={(e) => setSignupName(e.target.value)}
-                    disabled={isLoading}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input 
-                    id="signup-email" 
-                    type="email" 
-                    placeholder="m@example.com" 
-                    required 
-                    value={signupEmail}
-                    onChange={(e) => setSignupEmail(e.target.value)}
-                    disabled={isLoading}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <Input 
-                    id="signup-password" 
-                    type="password" 
-                    required 
-                    value={signupPassword}
-                    onChange={(e) => setSignupPassword(e.target.value)}
-                    disabled={isLoading}
-                  />
-                </div>
-                {error && (
-                  <Alert variant="destructive">
-                    <AlertTitle>Error</AlertTitle>
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Create Account
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      <Card className="w-full max-w-[400px]">
+        <CardHeader className="text-center">
+          <CardTitle>Welcome to SignSpeak</CardTitle>
+          <CardDescription>
+            Sign in with your Google account to continue.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {error && (
+            <Alert variant="destructive">
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          <Button onClick={handleGoogleSignIn} className="w-full" disabled={isLoading}>
+            {isLoading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+                <GoogleIcon className="mr-2 h-4 w-4" />
+            )}
+            Sign In with Google
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }
