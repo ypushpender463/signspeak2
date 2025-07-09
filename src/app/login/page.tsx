@@ -15,7 +15,8 @@ import {
   signInWithEmailAndPassword,
   updateProfile,
   sendEmailVerification,
-  signOut
+  signOut,
+  reload
 } from 'firebase/auth';
 import { useAuth } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
@@ -49,13 +50,19 @@ export default function LoginPage() {
     setShowVerificationMessage(false);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
-      if (!userCredential.user.emailVerified) {
-        setError("Please verify your email address to log in. We've sent another verification link to be sure.");
+
+      // Force a reload of the user's profile to get the latest emailVerified status.
+      await reload(userCredential.user);
+      
+      // After reload, auth.currentUser will have the latest state.
+      if (!auth.currentUser?.emailVerified) {
+        setError("Your email is not verified. Please check your inbox for a verification link. We've sent a new one just in case.");
         await sendEmailVerification(userCredential.user);
         await signOut(auth);
         setIsLoading(false);
         return;
       }
+
       toast({
         title: 'Login Successful',
         description: 'Welcome back!',
