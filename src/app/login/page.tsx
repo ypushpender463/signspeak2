@@ -51,7 +51,10 @@ export default function LoginPage() {
       });
       router.push('/');
     } catch (err: any) {
-      setError(err.message);
+      // Don't show an error if the user intentionally closed the popup
+      if (err.code !== 'auth/popup-closed-by-user') {
+        setError(err.message);
+      }
     } finally {
       setIsLoading(false);
     }
