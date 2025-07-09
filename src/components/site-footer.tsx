@@ -14,7 +14,6 @@ export function SiteFooter() {
         </div>
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <Link href="/about" className="hover:text-primary transition-colors">About</Link>
-            <Link href="/login" className="hover:text-primary transition-colors">Login</Link>
         </div>
       </div>
     </footer>

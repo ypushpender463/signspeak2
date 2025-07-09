@@ -3,6 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { SiteHeader } from '@/components/site-header';
 import { SiteFooter } from '@/components/site-footer';
+import { AuthProvider } from '@/hooks/use-auth';
 
 export const metadata: Metadata = {
   title: 'SignSpeak',
@@ -22,12 +23,14 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased flex flex-col min-h-screen bg-background text-foreground">
-        <SiteHeader />
-        <main className="flex-1 w-full">
-            {children}
-        </main>
-        <SiteFooter />
-        <Toaster />
+        <AuthProvider>
+          <SiteHeader />
+          <main className="flex-1 w-full">
+              {children}
+          </main>
+          <SiteFooter />
+          <Toaster />
+        </AuthProvider>
       </body>
     </html>
   );

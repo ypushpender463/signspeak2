@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
@@ -11,10 +12,15 @@ import { Loader2, Mic, Languages, Play, Square, ArrowRight } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { useAuth } from '@/hooks/use-auth';
+import { useRouter } from 'next/navigation';
 
 const TRANSLATION_INTERVAL = 5000; // 5 seconds
 
 export default function EnglishToAslPage() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
   const [transcribedText, setTranscribedText] = useState<string | null>(null);
@@ -28,6 +34,12 @@ export default function EnglishToAslPage() {
   
   const { toast } = useToast();
   
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
+
   const processAudioChunk = useCallback(async (audioBlob: Blob) => {
     if (!audioBlob) return;
     
@@ -156,6 +168,11 @@ export default function EnglishToAslPage() {
       }
     };
   }, [isTranslating, startChunkRecording]);
+
+  if (loading || !user) {
+    // AuthProvider shows a global loader, so we can return null here while redirecting.
+    return null;
+  }
 
   return (
     <div className="container py-8 md:py-12">
