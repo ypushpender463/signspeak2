@@ -13,7 +13,9 @@ import { auth } from '@/lib/firebase';
 import { 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword,
-  updateProfile
+  updateProfile,
+  sendEmailVerification,
+  signOut
 } from 'firebase/auth';
 import { useAuth } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
@@ -27,6 +29,8 @@ export default function LoginPage() {
   const [signupPassword, setSignupPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('login');
+  const [showVerificationMessage, setShowVerificationMessage] = useState(false);
   
   const router = useRouter();
   const { toast } = useToast();
@@ -42,8 +46,16 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    setShowVerificationMessage(false);
     try {
-      await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
+      const userCredential = await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
+      if (!userCredential.user.emailVerified) {
+        setError("Please verify your email address to log in. We've sent another verification link to be sure.");
+        await sendEmailVerification(userCredential.user);
+        await signOut(auth);
+        setIsLoading(false);
+        return;
+      }
       toast({
         title: 'Login Successful',
         description: 'Welcome back!',
@@ -60,22 +72,36 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    setShowVerificationMessage(false);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, signupEmail, signupPassword);
       if (userCredential.user) {
         await updateProfile(userCredential.user, { displayName: signupName });
+        await sendEmailVerification(userCredential.user);
       }
-      toast({
-        title: 'Account Created',
-        description: "You've successfully signed up.",
-      });
-      router.push('/');
+      await signOut(auth); // Sign out to force login after verification
+
+      // Reset form
+      setSignupName('');
+      setSignupEmail('');
+      setSignupPassword('');
+      
+      // Show message on login tab and switch to it
+      setShowVerificationMessage(true);
+      setActiveTab('login');
+      
     } catch (err: any) {
       setError(err.message);
     } finally {
       setIsLoading(false);
     }
   };
+
+  const handleTabChange = (value: string) => {
+    setError(null);
+    setShowVerificationMessage(false);
+    setActiveTab(value);
+  }
 
   if (loading || user) {
      return (
@@ -87,7 +113,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex items-center justify-center py-12 md:py-24">
-      <Tabs defaultValue="login" className="w-full max-w-[400px]">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full max-w-[400px]">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="login">Login</TabsTrigger>
           <TabsTrigger value="signup">Sign Up</TabsTrigger>
@@ -101,6 +127,14 @@ export default function LoginPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+               {showVerificationMessage && (
+                  <Alert>
+                    <AlertTitle>Check your email</AlertTitle>
+                    <AlertDescription>
+                      A verification link has been sent. Please verify your account before logging in.
+                    </AlertDescription>
+                  </Alert>
+                )}
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="login-email">Email</Label>
